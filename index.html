@@ -357,12 +357,8 @@
             const btcLabels = data.dates;
             const btcPrices = data.btc_prices;
             
-            // BTC Chart - Create gradient
+            // BTC Chart - Simple white line (no fill)
             const btcCtx = document.getElementById('btcChart').getContext('2d');
-            const btcGradient = btcCtx.createLinearGradient(0, 0, 0, 280);
-            btcGradient.addColorStop(0, 'rgba(255, 255, 255, 0.15)');
-            btcGradient.addColorStop(0.5, 'rgba(255, 255, 255, 0.05)');
-            btcGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
             
             btcChart = new Chart(btcCtx, {
                 type: 'line',
@@ -371,9 +367,8 @@
                     datasets: [{
                         data: btcPrices,
                         borderColor: 'rgba(255, 255, 255, 0.8)',
-                        backgroundColor: btcGradient,
                         borderWidth: 1.5,
-                        fill: true,
+                        fill: false,
                         tension: 0.3,
                         pointRadius: 0,
                         pointHoverRadius: 5,
