@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>코인베이스 비트코인 프리미엄 지수</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: #0a0a0f;
+            color: #e5e5e5;
+            font-family: 'Noto Sans KR', sans-serif;
+            padding: 24px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        /* Header */
+        .header {
+            margin-bottom: 24px;
+        }
+        
+        .title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ffffff;
+            margin-bottom: 4px;
+        }
+        
+        .subtitle {
+            font-size: 0.875rem;
+            color: #71717a;
+        }
+        
+        /* Stats Card */
+        .stats-card {
+            background: linear-gradient(135deg, #18181b 0%, #1f1f23 100%);
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 24px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .premium-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 2rem;
+            font-weight: 500;
+        }
+        
+        .premium-value.positive {
+            color: #22c55e;
+        }
+        
+        .premium-value.negative {
+            color: #ef4444;
+        }
+        
+        .premium-value.neutral {
+            color: #71717a;
+        }
+        
+        .premium-info {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .premium-status {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        .premium-status.positive {
+            color: #22c55e;
+        }
+        
+        .premium-status.negative {
+            color: #ef4444;
+        }
+        
+        .premium-status.neutral {
+            color: #71717a;
+        }
+        
+        .premium-label {
+            font-size: 0.75rem;
+            color: #71717a;
+        }
+        
+        .data-count {
+            margin-left: auto;
+            font-size: 0.75rem;
+            color: #52525b;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* Chart Section */
+        .chart-section {
+            background: #18181b;
+            border: 1px solid #27272a;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        
+        .chart-container {
+            margin-bottom: 20px;
+        }
+        
+        .chart-label {
+            font-size: 0.75rem;
+            color: #71717a;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .chart-label::before {
+            content: '';
+            width: 12px;
+            height: 3px;
+            background: #f97316;
+            border-radius: 2px;
+        }
+        
+        .btc-chart-wrapper {
+            height: 280px;
+            position: relative;
+        }
+        
+        .premium-chart-wrapper {
+            height: 180px;
+            position: relative;
+        }
+        
+        .premium-label-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+        
+        .premium-label-container .chart-label {
+            margin-bottom: 0;
+        }
+        
+        .premium-label-container .chart-label::before {
+            display: none;
+        }
+        
+        .bar-legend {
+            display: flex;
+            gap: 12px;
+            font-size: 0.7rem;
+        }
+        
+        .bar-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .bar-legend-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 2px;
+        }
+        
+        .bar-legend-dot.green {
+            background: #22c55e;
+        }
+        
+        .bar-legend-dot.red {
+            background: #ef4444;
+        }
+        
+        /* Footer */
+        .footer {
+            margin-top: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.75rem;
+            color: #52525b;
+        }
+        
+        .source-info {
+            display: flex;
+            gap: 16px;
+        }
+        
+        /* Message for no data */
+        .no-data-message {
+            text-align: center;
+            color: #71717a;
+            font-size: 0.875rem;
+            padding: 40px 20px;
+        }
+        
+        /* Loading */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 400px;
+            color: #71717a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1 class="title">코인베이스 비트코인 프리미엄 지수</h1>
+            <p class="subtitle">Coinbase Bitcoin Premium Index</p>
+        </div>
+        
+        <!-- Stats Card -->
+        <div class="stats-card">
+            <div class="premium-value neutral" id="premiumValue">--</div>
+            <div class="premium-info">
+                <span class="premium-status neutral" id="premiumStatus">데이터 로딩 중...</span>
+                <span class="premium-label">Coinbase vs Binance</span>
+            </div>
+            <div class="data-count" id="dataCount"></div>
+        </div>
+        
+        <!-- Chart Section -->
+        <div class="chart-section">
+            <!-- BTC Price Chart -->
+            <div class="chart-container">
+                <div class="chart-label">비트코인 (USD)</div>
+                <div class="btc-chart-wrapper">
+                    <canvas id="btcChart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Premium Bar Chart -->
+            <div class="chart-container" style="margin-bottom: 0;">
+                <div class="premium-label-container">
+                    <div class="chart-label">프리미엄 지수 (%)</div>
+                    <div class="bar-legend">
+                        <div class="bar-legend-item">
+                            <div class="bar-legend-dot green"></div>
+                            <span style="color: #71717a;">프리미엄</span>
+                        </div>
+                        <div class="bar-legend-item">
+                            <div class="bar-legend-dot red"></div>
+                            <span style="color: #71717a;">디스카운트</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="premium-chart-wrapper" id="premiumChartContainer">
+                    <canvas id="premiumChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <div class="source-info">
+                <span>Data: Coinbase, Binance</span>
+            </div>
+            <span id="lastUpdated">--</span>
+        </div>
+    </div>
+
+    <script>
+        // Chart instances
+        let btcChart = null;
+        let premiumChart = null;
+        
+        // Chart.js defaults
+        Chart.defaults.color = '#71717a';
+        Chart.defaults.borderColor = '#27272a';
+        Chart.defaults.font.family = "'Noto Sans KR', sans-serif";
+        
+        async function loadData() {
+            try {
+                const response = await fetch('data.json');
+                const data = await response.json();
+                
+                renderCharts(data);
+                updateStats(data);
+                updateFooter(data);
+                
+            } catch (error) {
+                console.error('Error loading data:', error);
+                document.getElementById('premiumStatus').textContent = '데이터 로드 실패';
+            }
+        }
+        
+        function updateStats(data) {
+            const valueEl = document.getElementById('premiumValue');
+            const statusEl = document.getElementById('premiumStatus');
+            const countEl = document.getElementById('dataCount');
+            
+            if (data.premium_values && data.premium_values.length > 0) {
+                const latestPremium = data.premium_values[data.premium_values.length - 1];
+                const isPositive = latestPremium > 0;
+                const isNeutral = Math.abs(latestPremium) < 0.01;
+                
+                // Format value
+                const sign = latestPremium > 0 ? '+' : '';
+                valueEl.textContent = `${sign}${latestPremium.toFixed(2)}%`;
+                
+                // Set colors and status
+                if (isNeutral) {
+                    valueEl.className = 'premium-value neutral';
+                    statusEl.className = 'premium-status neutral';
+                    statusEl.textContent = '중립';
+                } else if (isPositive) {
+                    valueEl.className = 'premium-value positive';
+                    statusEl.className = 'premium-status positive';
+                    statusEl.textContent = '프리미엄 (미국 매수세)';
+                } else {
+                    valueEl.className = 'premium-value negative';
+                    statusEl.className = 'premium-status negative';
+                    statusEl.textContent = '디스카운트 (미국 매도세)';
+                }
+                
+                // Data count
+                countEl.textContent = `${data.premium_dates.length}일 데이터`;
+                
+            } else {
+                valueEl.textContent = '--';
+                valueEl.className = 'premium-value neutral';
+                statusEl.textContent = '데이터 수집 중...';
+                statusEl.className = 'premium-status neutral';
+                countEl.textContent = '수집 시작';
+            }
+        }
+        
+        function renderCharts(data) {
+            // Destroy existing charts
+            if (btcChart) btcChart.destroy();
+            if (premiumChart) premiumChart.destroy();
+            
+            // Prepare BTC data
+            const btcLabels = data.dates;
+            const btcPrices = data.btc_prices;
+            
+            // BTC Chart
+            const btcCtx = document.getElementById('btcChart').getContext('2d');
+            btcChart = new Chart(btcCtx, {
+                type: 'line',
+                data: {
+                    labels: btcLabels,
+                    datasets: [{
+                        data: btcPrices,
+                        borderColor: '#f97316',
+                        backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 4,
+                        pointHoverBackgroundColor: '#f97316'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: {
+                        intersect: false,
+                        mode: 'index'
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: '#27272a',
+                            titleColor: '#e5e5e5',
+                            bodyColor: '#e5e5e5',
+                            borderColor: '#3f3f46',
+                            borderWidth: 1,
+                            padding: 12,
+                            displayColors: false,
+                            callbacks: {
+                                title: (items) => items[0].label,
+                                label: (item) => `$${item.raw.toLocaleString()}`
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'month',
+                                displayFormats: { month: 'MMM' }
+                            },
+                            grid: { display: false },
+                            ticks: {
+                                font: { size: 11 },
+                                maxRotation: 0
+                            }
+                        },
+                        y: {
+                            position: 'right',
+                            grid: {
+                                color: '#27272a',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                font: { family: "'JetBrains Mono', monospace", size: 11 },
+                                callback: (value) => '$' + (value / 1000).toFixed(0) + 'K'
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Premium Bar Chart
+            if (data.premium_dates && data.premium_dates.length > 0) {
+                const premiumLabels = data.premium_dates;
+                const premiumValues = data.premium_values;
+                
+                // Create colors array based on values
+                const barColors = premiumValues.map(v => v >= 0 ? '#22c55e' : '#ef4444');
+                
+                const premiumCtx = document.getElementById('premiumChart').getContext('2d');
+                premiumChart = new Chart(premiumCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: premiumLabels,
+                        datasets: [{
+                            data: premiumValues,
+                            backgroundColor: barColors,
+                            borderColor: barColors,
+                            borderWidth: 0,
+                            borderRadius: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        },
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                backgroundColor: '#27272a',
+                                titleColor: '#e5e5e5',
+                                bodyColor: '#e5e5e5',
+                                borderColor: '#3f3f46',
+                                borderWidth: 1,
+                                padding: 12,
+                                displayColors: false,
+                                callbacks: {
+                                    title: (items) => items[0].label,
+                                    label: (item) => {
+                                        const value = item.raw;
+                                        const sign = value > 0 ? '+' : '';
+                                        const status = value > 0 ? '프리미엄' : '디스카운트';
+                                        return `${sign}${value.toFixed(4)}% (${status})`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                type: 'time',
+                                time: {
+                                    unit: 'month',
+                                    displayFormats: { month: 'MMM' }
+                                },
+                                grid: { display: false },
+                                ticks: {
+                                    font: { size: 11 },
+                                    maxRotation: 0
+                                }
+                            },
+                            y: {
+                                position: 'right',
+                                min: -0.5,
+                                max: 0.5,
+                                grid: {
+                                    color: (context) => {
+                                        if (context.tick.value === 0) return '#52525b';
+                                        return '#27272a';
+                                    },
+                                    drawBorder: false,
+                                    lineWidth: (context) => {
+                                        if (context.tick.value === 0) return 2;
+                                        return 1;
+                                    }
+                                },
+                                ticks: {
+                                    font: { family: "'JetBrains Mono', monospace", size: 11 },
+                                    callback: (value) => {
+                                        const sign = value > 0 ? '+' : '';
+                                        return sign + value.toFixed(1) + '%';
+                                    },
+                                    stepSize: 0.25
+                                }
+                            }
+                        }
+                    }
+                });
+            } else {
+                // Show message when no premium data yet
+                document.getElementById('premiumChartContainer').innerHTML = 
+                    '<div class="no-data-message">프리미엄 데이터 수집 중입니다.<br>매일 자동으로 데이터가 추가됩니다.</div>';
+            }
+        }
+        
+        function updateFooter(data) {
+            const lastUpdatedEl = document.getElementById('lastUpdated');
+            
+            if (data.last_updated) {
+                const date = new Date(data.last_updated);
+                const options = { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    timeZoneName: 'short'
+                };
+                lastUpdatedEl.textContent = 'Updated: ' + date.toLocaleDateString('en-US', options);
+            }
+        }
+        
+        // Initialize
+        loadData();
+    </script>
+</body>
+</html>
